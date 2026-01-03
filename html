@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FNAF 2026: 2-Door Office</title>
+    <style>
+        body { margin: 0; background: black; color: white; font-family: 'Courier New', monospace; overflow: hidden; }
+        #game-window { width: 800px; height: 600px; margin: 20px auto; border: 5px solid #333; position: relative; overflow: hidden; background: #000; }
+        
+        /* The wide office that pans */
+        #office-container { 
+            position: absolute; width: 1600px; height: 600px; 
+            background: linear-gradient(90deg, #111 0%, #222 50%, #111 100%);
+            transition: left 0.1s linear; left: -400px; /* Start centered */
+        }
+
+        /* Door Visuals */
+        .door { width: 100px; height: 500px; background: #444; position: absolute; top: 50px; border: 2px solid #666; display: none; }
+        #door-left { left: 50px; }
+        #door-right { right: 50px; }
+
+        /* Buttons */
+        .door-btn { position: absolute; top: 250px; padding: 15px; cursor: pointer; z-index: 10; background: #600; color: white; border: none; }
+        #btn-l { left: 160px; }
+        #btn-r { right: 160px; }
+
+        /* UI */
+        #hud { position: absolute; top: 10px; left: 10px; z-index: 20; pointer-events: none; }
+        #cam-overlay { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 30; text-align: center; }
+        .cam-btn { margin-top: 20px; padding: 10px; cursor: pointer; }
+        #static { position: absolute; inset: 0; background: url('media.giphy.com'); opacity: 0.05; pointer-events: none; }
+        #jumpscare { display: none; position: fixed; inset: 0; background: red; z-index: 100; align-items: center; justify-content: center; font-size: 50px; }
+    </style>
+</head>
+<body>
+
+<div id="game-window" onmousemove="handlePan(event)">
+    <div id="hud">
+        TIME: <span id="clock">12</span> AM | POWER: <span id="power">100</span>%
+        <br><br>
+        <button style="pointer-events: all;" onclick="toggleCams()">[ OPEN CAMERAS ]</button>
+    </div>
+
+    <!-- Panning Office -->
+    <div id="office-container">
+        <!-- Left Side -->
+        <div id="door-left" class="door"></div>
+        <button id="btn-l" class="door-btn" onclick="toggleDoor('left')">DOOR L</button>
+
+        <!-- Center -->
+        <div style="position: absolute; left: 750px; top: 200px; text-align: center; width: 100px;">
+            <div style="width: 50px; height: 50px; background: yellow; border-radius: 50%; margin: auto;"></div>
+            <p>POSTER</p>
+        </div>
+
+        <!-- Right Side -->
+        <div id="door-right" class="door"></div>
+        <button id="btn-r" class="door-btn" onclick="toggleDoor('right')">DOOR R</button>
+    </div>
+
+    <!-- Camera View -->
+    <div id="cam-overlay">
+        <h2 id="cam-id">CAM 1: STAGE</h2>
+        <button class="cam-btn" onclick="changeCam(1)">CAM 1 (Stage)</button>
+        <button class="cam-btn" onclick="changeCam(2)">CAM 2 (Left Hall)</button>
+        <button class="cam-btn" onclick="changeCam(3)">CAM 3 (Right Hall)</button>
+        <div id="static"></div>
+    </div>
+</div>
+
+<div id="jumpscare">IT'S ME.</div>
+
+<script>
+    let power = 100, time = 0, camsOpen = false;
+    let doors = { left: false, right: false };
+    let enemy = { pos: 1, side: 'left' }; // Side can be 'left' or 'right'
+    let officeX = -400;
+
+    // 1. 180-Degree Panning Logic
+    function handlePan(e) {
+        if (camsOpen) return;
+        const rect = document.getElementById('game-window').getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        
+        // If mouse is near edges, shift office
+        if (mouseX < 150 && officeX < 0) officeX += 10;
+        if (mouseX > 650 && officeX > -800) officeX -= 10;
+        
+        document.getElementById('office-container').style.left = officeX + "px";
+    }
+
+    // 2. Door Logic
+    function toggleDoor(side) {
+        doors[side] = !doors[side];
+        document.getElementById(`door-${side}`).style.display = doors[side] ? 'block' : 'none';
+        document.getElementById(`btn-${side}`).style.background = doors[side] ? '#060' : '#600';
+    }
+
+    // 3. AI Movement (Left or Right)
+    setInterval(() => {
+        if (Math.random() > 0.6) {
+            enemy.pos++;
+            if (enemy.pos === 2) enemy.side = Math.random() > 0.5 ? 'left' : 'right';
+            
+            if (enemy.pos >= 4) { // At the door
+                if (doors[enemy.side]) {
+                    enemy.pos = 1; // Blocked!
+                } else {
+                    document.getElementById('jumpscare').style.display = 'flex';
+                }
+            }
+        }
+    }, 4000);
+
+    // 4. Power & Time
+    setInterval(() => {
+        let drain = 0.1;
+        if (doors.left) drain += 0.4;
+        if (doors.right) drain += 0.4;
+        if (camsOpen) drain += 0.2;
+        power -= drain;
+        document.getElementById('power').innerText = Math.floor(power);
+        if (power <= 0) alert("Power Outage!");
+    }, 1000);
+
+    function toggleCams() {
+        camsOpen = !camsOpen;
+        document.getElementById('cam-overlay').style.display = camsOpen ? 'block' : 'none';
+    }
+
+    function changeCam(id) {
+        const names = ["", "STAGE", "LEFT HALLWAY", "RIGHT HALLWAY"];
+        document.getElementById('cam-id').innerText = "CAM " + id + ": " + names[id];
+    }
+</script>
+</body>
+</html>
